@@ -1,0 +1,53 @@
+---
+- hosts: all
+  tasks:
+    - name: Create devstack user ("stack" by default)
+      user:
+        name: "{{ devstack_user }}"
+        password: "{{ devstack_password | password_hash('sha512') }}"
+        createhome: yes
+        shell: /bin/bash
+        state: present
+      become: yes
+
+    - name: Add devstack user to sudo group
+      user:
+        name: "{{ devstack_user }}"
+        groups: sudo
+        append: yes
+      become: yes
+
+    - name: Allow passwordless sudo for the user (Debian/Ubuntu)
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: "^{{ devstack_user }}"
+        line: "{{ devstack_user }} ALL=(ALL) NOPASSWD:ALL"
+        validate: "/usr/sbin/visudo -cf %s"
+      when: ansible_os_family == 'Debian'
+      become: yes
+
+    - name: Allow passwordless sudo for the user (Fedora/Red Hat/CentOS)
+      lineinfile:
+        path: /etc/sudoers.d/username
+        state: present
+        line: "{{ devstack_user }} ALL=(ALL) NOPASSWD:ALL"
+        create: yes
+        mode: 0440
+        validate: "/usr/sbin/visudo -cf %s"
+      when: ansible_os_family == 'RedHat'
+      become: yes
+
+    - name: debug
+      ansible.builtin.debug:
+        var: iface1
+
+
+- hosts: all
+  roles:
+    - update_os
+    - devstack_dependencies
+    - role: devstack
+      become: yes
+      become_user: "{{ devstack_user }}"
+

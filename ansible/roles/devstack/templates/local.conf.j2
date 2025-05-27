@@ -1,0 +1,153 @@
+[[local|localrc]]
+HOST_IP_IFACE={{ iface1 }}
+HOST_IP=$(ip a show $HOST_IP_IFACE | awk '$1 == "inet" {print substr($2,0,index($2,"/") - 1) }')
+HOST_NAME=$(hostname)
+DATABASE_PASSWORD=password
+RABBIT_PASSWORD=password
+ADMIN_PASSWORD=password
+SERVICE_PASSWORD=password
+HORIZON_PASSWORD=password
+SERVICE_TOKEN=tokentoken
+USE_VENV=False
+GLOBAL_VENV=False
+
+# TLS
+# ENABLE_TLS=True
+# enable_service tls-proxy
+
+# Database
+MYSQL_GATHER_PERFORMANCE=False
+
+# uWSGI
+NEUTRON_DEPLOY_MOD_WSGI=True
+
+# Internet access.
+RECLONE=True
+PIP_UPGRADE=True
+
+BRANCH=master
+CINDER_BRANCH=$BRANCH
+GLANCE_BRANCH=$BRANCH
+NEUTRON_BRANCH=$BRANCH
+NOVA_BRANCH=$BRANCH
+HORIZON_BRANCH=$BRANCH
+KEYSTONE_BRANCH=$BRANCH
+HEAT_BRANCH=$BRANCH
+LIBS_FROM_GIT=glance_store
+
+#disable_all_services
+disable_service n-net
+enable_service n-cpu
+enable_service n-obj
+enable_service placement-api
+enable_service q-svc
+enable_service n-cauth
+enable_service tempest
+disable_service horizon
+
+# Tempest, neutron-tempest-plugin and WB-n-t-p
+# NOTE: error con pip 20.3 y la instalacion de tempest
+# enable_plugin neutron-tempest-plugin /opt/stack/neutron-tempest-plugin/
+# enable_plugin whitebox-neutron-tempest-plugin /opt/stack/whitebox-neutron-tempest-plugin/
+# enable_plugin neutron-dynamic-routing https://github.com/openstack/neutron-dynamic-routing.git
+# INSTALL_TEMPEST=True
+# IMAGE_URLS=https://dl.rockylinux.org/vault/rocky/9.3/images/x86_64/Rocky-9-GenericCloud.latest.x86_64.qcow2
+# ADVANCED_IMAGE_NAME=Rocky-9-GenericCloud.latest.x86_64
+# ADVANCED_INSTANCE_TYPE=ds1G
+# ADVANCED_INSTANCE_USER=rocky
+BUILD_TIMEOUT=784
+CIRROS_VERSION=0.6.2
+CUSTOMIZE_IMAGE=False
+DEFAULT_IMAGE_FILE_NAME=cirros-0.6.2-x86_64-disk.img
+DEFAULT_IMAGE_NAME=cirros-0.6.2-x86_64-disk
+GLANCE_LIMIT_IMAGE_SIZE_TOTAL=5000
+
+# Heat
+# enable_plugin heat https://opendev.org/openstack/heat
+# enable_service h-eng h-api h-api-cfn h-api-cw
+
+# OVN
+enable_service ovn-northd
+enable_service ovn-controller
+# enable_service q-ovn-agent
+# disable_service q-ovn-metadata-agent
+# OVN_AGENT_EXTENSIONS='metadata'
+# Disable Neutron agents not used with OVN.
+disable_service q-agt
+disable_service q-l3
+disable_service q-dhcp
+disable_service q-meta
+
+# OVS and OVN
+OVN_BRANCH="branch-24.03"
+OVS_BRANCH="branch-3.3"
+OVN_BUILD_MODULES=True
+OVN_BUILD_FROM_SOURCE=True
+
+DEST={{ devstack_base_dir }}
+SCREEN_LOGDIR=$DEST/logs/screen
+LOGFILE=${SCREEN_LOGDIR}/xstack.sh.log
+LOGDAYS=10
+
+# Neutron options.
+enable_plugin neutron /opt/stack/neutron
+Q_SERVICE_PLUGIN_CLASSES=qos
+Q_AGENT="ovn"
+NEUTRON_AGENT=$Q_AGENT
+Q_ML2_PLUGIN_MECHANISM_DRIVERS=ovn,logger
+Q_ML2_PLUGIN_TYPE_DRIVERS=vlan,flat,local,geneve
+Q_ML2_TENANT_NETWORK_TYPE=geneve
+_VLAN_IP=192.168.30.20
+FLOATING_RANGE=192.168.40.0/24
+# Testing not to include this variable PUBLIC_NETWORK_GATEWAY
+PUBLIC_NETWORK_GATEWAY=192.168.40.1
+Q_FLOATING_ALLOCATION_POOL=start=192.168.40.100,end=192.168.40.250
+PUBLIC_INTERFACE=enp2s0
+
+IP_VERSION=4
+SUBNETPOOL_PREFIX_V4="10.0.10.0/24"
+
+# Cinder options.
+VOLUME_BACKING_FILE_SIZE=30720M
+
+# OVN
+ENABLE_CHASSIS_AS_GW=True
+
+[[post-config|$NOVA_CONF]]
+[DEFAULT]
+scheduler_default_filters=ComputeCapabilitiesFilter,ImagePropertiesFilter,PciPassthroughFilter
+quota_driver=nova.quota.NoopQuotaDriver
+
+[filter_scheduler]
+enabled_filters = ComputeCapabilitiesFilter,ImagePropertiesFilter
+
+[[post-config|$NEUTRON_CONF]]
+[DEFAULT]
+rpc_workers = 1
+service_plugins = qos,ovn-router,segments,network_segment_range,placement
+
+[[post-config|/$Q_PLUGIN_CONF_FILE]]
+[ml2]
+extension_drivers = port_security,qos,segments,network_segment_range,uplink_status_propagation
+type_drivers = flat,vlan,vxlan,geneve
+
+[ml2_type_vxlan]
+vni_ranges = 1001:1100
+
+[ml2_type_geneve]
+max_header_size = 38 
+vni_ranges = 1:200   
+
+[ml2_type_vlan]
+network_vlan_ranges = public:11:200
+
+[placement]
+region_name = RegionOne
+project_domain_name = Default
+project_name = service
+user_domain_name = Default
+password = password
+username = placement
+auth_url = http://$HOST_IP/identity
+auth_type = password
+

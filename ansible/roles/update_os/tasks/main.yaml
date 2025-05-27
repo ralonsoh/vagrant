@@ -1,0 +1,31 @@
+---
+- name: Update Ubuntu/Debian packages
+  apt:
+      update_cache: yes
+      cache_valid_time: 3600
+  become: yes
+  become_method: sudo
+  when: ansible_os_family == 'Debian'
+
+- name: Upgrade all Ubuntu/Debian packages
+  apt:
+      upgrade: dist
+  become: yes
+  become_method: sudo
+  when: ansible_os_family == 'Debian'
+
+- name: Upgrade all Fedora/Red Hat/CentOS packages
+  dnf:
+      name: '*'
+      state: latest
+      update_cache: yes
+  become: yes
+  become_method: sudo
+  when: ansible_os_family == 'RedHat'
+
+- name: Reboot the VM
+  ansible.builtin.reboot:
+    reboot_timeout: 150
+  become: yes
+  become_method: sudo
+

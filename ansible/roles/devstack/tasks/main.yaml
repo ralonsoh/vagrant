@@ -1,0 +1,57 @@
+---
+- name: Create /opt/stack directory
+  become: yes
+  become_method: sudo
+  become_user: root
+  ansible.builtin.file:
+    path: /opt/stack
+    state: directory
+    mode: 0755
+    owner: "{{ devstack_user }}"
+    group: "{{ devstack_user }}"
+    recurse: yes
+
+- name: Clone devstack repository
+  git:
+    repo={{ devstack_repository }}
+    version={{ branch }}
+    dest=/opt/stack/devstack
+    accept_hostkey=True
+    force=yes
+
+- name: Clone Neutron repository
+  git:
+    repo={{ neutron_repository }}
+    version={{ branch }}
+    dest=/opt/stack/neutron
+    accept_hostkey=True
+    force=yes
+
+- name: Copy devstack's local.conf
+  template:
+    src=templates/local.conf.j2
+    dest=/opt/stack/devstack/local.conf
+
+
+    #- name: Copy devstack's local.conf to compute nodes
+    #  template:
+    #    src=templates/compute-local.conf.j2
+    #    dest=/opt/stack/devstack/local.conf
+    #  when: vm_type == 'devstack' and (topology == "multinode" and "compute" in inventory_hostname)
+    #
+    #
+    #- name: Copy devstack's local.conf to network nodes
+    #  template:
+    #    src=templates/network-local.conf.j2
+    #    dest=/opt/stack/devstack/local.conf
+    #  when: vm_type == 'devstack' and (topology == "multinode" and "network" in inventory_hostname)
+    #
+    #
+    #- name: Ensure simplejson and pyasn1 packages aren't installed from distro
+    #  become: yes
+    #  become_method: sudo
+    #  package:
+    #    name: ['python3-pyasn1', 'python3-simplejson']
+    #    state: absent
+    #  when: ansible_distribution == "Ubuntu"
+

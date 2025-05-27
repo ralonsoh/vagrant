@@ -1,0 +1,26 @@
+---
+- name: Install devstack dependencies
+  ansible.builtin.apt:
+      update_cache: yes
+      name:
+        - git
+        - tmux
+        - acl
+        - tox
+        - silversearcher-ag
+  become: yes
+  become_method: sudo
+  when: ansible_os_family == 'Debian'
+
+- name: Upgrade all Fedora/Red Hat/CentOS packages
+  dnf:
+      update_cache: yes
+      name:
+        - git
+        - tmux
+        - acl
+        - tox
+  become: yes
+  become_method: sudo
+  when: ansible_os_family == 'RedHat'
+
