@@ -10,12 +10,12 @@ Vagrant.configure("2") do |config|
   # Iterate from 1 to VM_NUM
   (1..VM_NUM).each do |idx|
     # Define each machine
-    config.vm.define "u24#{idx}" do |node|
+    config.vm.define "u22#{idx}" do |node|
       # Project: https://github.com/alvistack/vagrant-rhel
-      node.vm.box = "cloud-image/ubuntu-24.04"
-      node.vm.hostname = "u24#{idx}"
+      node.vm.box = "cloud-image/ubuntu-22.04"
+      node.vm.hostname = "u22#{idx}"
       node.ssh.forward_agent = true
-      node.vm.define "u24ovn#{idx}"
+      node.vm.define "u22ovn#{idx}"
     
       # Network
       #config.vm.network "private_network", ip: "192.168.20.10"" 
